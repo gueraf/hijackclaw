@@ -1,13 +1,15 @@
 # HijackClaw
 
+Experimental Project. Use it at your own risk.
+
 Run Claude Code using your ChatGPT/Codex subscription as the backend — no Anthropic API key or Claude session limits required.
 
 ## Why
 
-Claude Code is a powerful CLI/app, but actually using it can be frustrating:
+We love Claude Code, but sometimes, we can't use it.
 
-- **Session limits** — You've burned through your Claude Pro/Team allocation and it's only Tuesday
-- **No API budget** — Anthropic API credits aren't cheap, and your org won't approve them
+- **Session limits** — You've burned through your Claude Pro/Team allocation, and it's only Tuesday
+- **No API budget** — Anthropic API credits or subscription aren't cheap, and your org won't approve them
 - **Workplace restrictions** — Corporate firewalls or network policies block `api.anthropic.com`
 - **Regional availability** — Claude API isn't available in your region, but ChatGPT is
 - **Billing separation** — You already pay for ChatGPT Plus/Team and don't want a second AI subscription
