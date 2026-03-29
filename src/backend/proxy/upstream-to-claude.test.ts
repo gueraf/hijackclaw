@@ -39,4 +39,33 @@ describe("translateUpstreamResponseToClaude", () => {
       },
     });
   });
+
+  it("translates function calls into tool_use content blocks", () => {
+    const result = translateUpstreamResponseToClaude({
+      id: "resp_456",
+      model: "gpt-5",
+      outputText: "I'll read that file.",
+      functionCalls: [
+        {
+          callId: "call_abc",
+          name: "Read",
+          arguments: '{"file_path":"/tmp/test.txt"}',
+        },
+      ],
+      stopReason: "tool_use",
+      stopSequence: null,
+      usage: { inputTokens: 20, outputTokens: 15 },
+    });
+
+    expect(result.content).toEqual([
+      { type: "text", text: "I'll read that file." },
+      {
+        type: "tool_use",
+        id: "call_abc",
+        name: "Read",
+        input: { file_path: "/tmp/test.txt" },
+      },
+    ]);
+    expect(result.stop_reason).toBe("tool_use");
+  });
 });

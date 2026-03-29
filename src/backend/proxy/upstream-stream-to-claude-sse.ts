@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { UpstreamStreamEvent } from "../upstream/types.js";
+import type { UpstreamFunctionCall, UpstreamStreamEvent } from "../upstream/types.js";
 import type { ClaudeStopReason } from "./types.js";
 import { mapUpstreamStopReasonToClaude } from "./upstream-to-claude.js";
 
@@ -16,6 +16,14 @@ function buildMessageId(messageId?: string): string {
   return messageId ?? `msg_${randomUUID()}`;
 }
 
+function parseFunctionCallInput(args: string): Record<string, unknown> {
+  try {
+    return JSON.parse(args) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
 export async function* translateUpstreamStreamToClaudeSse(
   stream: AsyncIterable<UpstreamStreamEvent>,
   options: TranslateStreamOptions,
@@ -25,6 +33,8 @@ export async function* translateUpstreamStreamToClaudeSse(
   let outputTokens = 0;
   let stopReason: ClaudeStopReason = "end_turn";
   let stopSequence: string | null = null;
+  let functionCalls: UpstreamFunctionCall[] = [];
+  let contentBlockIndex = 0;
 
   yield formatSseEvent("message_start", {
     type: "message_start",
@@ -45,7 +55,7 @@ export async function* translateUpstreamStreamToClaudeSse(
 
   yield formatSseEvent("content_block_start", {
     type: "content_block_start",
-    index: 0,
+    index: contentBlockIndex,
     content_block: {
       type: "text",
       text: "",
@@ -56,7 +66,7 @@ export async function* translateUpstreamStreamToClaudeSse(
     if (event.type === "response.output_text.delta" && event.delta.length > 0) {
       yield formatSseEvent("content_block_delta", {
         type: "content_block_delta",
-        index: 0,
+        index: contentBlockIndex,
         delta: {
           type: "text_delta",
           text: event.delta,
@@ -70,13 +80,44 @@ export async function* translateUpstreamStreamToClaudeSse(
       outputTokens = event.response.usage.outputTokens;
       stopReason = mapUpstreamStopReasonToClaude(event.response.stopReason);
       stopSequence = event.response.stopSequence;
+      functionCalls = event.response.functionCalls ?? [];
     }
   }
 
   yield formatSseEvent("content_block_stop", {
     type: "content_block_stop",
-    index: 0,
+    index: contentBlockIndex,
   });
+  contentBlockIndex++;
+
+  for (const fc of functionCalls) {
+    yield formatSseEvent("content_block_start", {
+      type: "content_block_start",
+      index: contentBlockIndex,
+      content_block: {
+        type: "tool_use",
+        id: fc.callId,
+        name: fc.name,
+        input: {},
+      },
+    });
+
+    yield formatSseEvent("content_block_delta", {
+      type: "content_block_delta",
+      index: contentBlockIndex,
+      delta: {
+        type: "input_json_delta",
+        partial_json: JSON.stringify(parseFunctionCallInput(fc.arguments)),
+      },
+    });
+
+    yield formatSseEvent("content_block_stop", {
+      type: "content_block_stop",
+      index: contentBlockIndex,
+    });
+
+    contentBlockIndex++;
+  }
 
   yield formatSseEvent("message_delta", {
     type: "message_delta",
