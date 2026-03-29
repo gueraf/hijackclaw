@@ -143,8 +143,12 @@ describe("registerProxyRoutes", () => {
 
     const response = await request(app).post("/v1/messages").send({
       model: "gpt-5",
-      tools: [{ name: "not-supported-yet" }],
-      messages: [{ role: "user", content: "Hello" }],
+      messages: [
+        {
+          role: "user",
+          content: [{ type: "image", source: { type: "base64", data: "abc" } }],
+        },
+      ],
     });
 
     expect(response.status).toBe(400);

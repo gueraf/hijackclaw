@@ -33,7 +33,7 @@ describe("translateClaudeRequestToUpstream", () => {
     });
   });
 
-  it("throws explicit unsupported errors for non-text content blocks", () => {
+  it("throws for non-text non-tool content blocks", () => {
     expect(() =>
       translateClaudeRequestToUpstream({
         model: "gpt-5",
@@ -47,13 +47,93 @@ describe("translateClaudeRequestToUpstream", () => {
     ).toThrowError(UnsupportedAnthropicFeatureError);
   });
 
-  it("throws explicit unsupported errors for tools in MVP", () => {
-    expect(() =>
-      translateClaudeRequestToUpstream({
-        model: "gpt-5",
-        tools: [{ name: "tool" }],
-        messages: [{ role: "user", content: "hello" }],
-      }),
-    ).toThrowError(UnsupportedAnthropicFeatureError);
+  it("translates tool definitions to upstream function format", () => {
+    const result = translateClaudeRequestToUpstream({
+      model: "gpt-5",
+      tools: [
+        {
+          name: "Read",
+          description: "Read a file",
+          input_schema: {
+            type: "object",
+            properties: { file_path: { type: "string" } },
+            required: ["file_path"],
+          },
+        },
+      ],
+      messages: [{ role: "user", content: "Read /tmp/test.txt" }],
+    });
+
+    expect(result.tools).toEqual([
+      {
+        type: "function",
+        name: "Read",
+        description: "Read a file",
+        parameters: {
+          type: "object",
+          properties: { file_path: { type: "string" } },
+          required: ["file_path"],
+        },
+      },
+    ]);
+  });
+
+  it("translates assistant tool_use and user tool_result messages", () => {
+    const result = translateClaudeRequestToUpstream({
+      model: "gpt-5",
+      tools: [{ name: "Read", input_schema: { type: "object" } }],
+      messages: [
+        { role: "user", content: "Read the file" },
+        {
+          role: "assistant",
+          content: [
+            { type: "text", text: "I'll read it." },
+            {
+              type: "tool_use",
+              id: "toolu_01abc",
+              name: "Read",
+              input: { file_path: "/tmp/test.txt" },
+            },
+          ],
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "tool_result",
+              tool_use_id: "toolu_01abc",
+              content: "file contents here",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(result.input).toEqual([
+      { role: "user", content: [{ type: "input_text", text: "Read the file" }] },
+      { role: "assistant", content: [{ type: "input_text", text: "I'll read it." }] },
+      {
+        type: "function_call",
+        callId: "toolu_01abc",
+        name: "Read",
+        arguments: '{"file_path":"/tmp/test.txt"}',
+      },
+      {
+        type: "function_call_output",
+        callId: "toolu_01abc",
+        output: "file contents here",
+      },
+    ]);
+  });
+
+  it("translates tool_choice", () => {
+    const result = translateClaudeRequestToUpstream({
+      model: "gpt-5",
+      tools: [{ name: "Read", input_schema: { type: "object" } }],
+      tool_choice: { type: "any" },
+      messages: [{ role: "user", content: "go" }],
+    });
+
+    expect(result.toolChoice).toBe("required");
   });
 });

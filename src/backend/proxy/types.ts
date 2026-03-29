@@ -10,7 +10,27 @@ export type ClaudeUnknownBlock = {
   [key: string]: unknown;
 };
 
-export type ClaudeContent = string | Array<ClaudeTextBlock | ClaudeUnknownBlock>;
+export type ClaudeToolUseBlock = {
+  type: "tool_use";
+  id: string;
+  name: string;
+  input: Record<string, unknown>;
+};
+
+export type ClaudeToolResultBlock = {
+  type: "tool_result";
+  tool_use_id: string;
+  content?: string | Array<ClaudeTextBlock>;
+  is_error?: boolean;
+};
+
+export type ClaudeToolDefinition = {
+  name: string;
+  description?: string;
+  input_schema: Record<string, unknown>;
+};
+
+export type ClaudeContent = string | Array<ClaudeTextBlock | ClaudeToolUseBlock | ClaudeToolResultBlock | ClaudeUnknownBlock>;
 
 export type ClaudeMessage = {
   role: ClaudeRole;
@@ -26,7 +46,7 @@ export type ClaudeMessagesRequest = {
   top_p?: number;
   stop_sequences?: string[];
   stream?: boolean;
-  tools?: unknown;
+  tools?: ClaudeToolDefinition[];
   tool_choice?: unknown;
 };
 
@@ -36,7 +56,7 @@ export type ClaudeMessagesResponse = {
   id: string;
   type: "message";
   role: "assistant";
-  content: ClaudeTextBlock[];
+  content: Array<ClaudeTextBlock | ClaudeToolUseBlock>;
   model: string;
   stop_reason: ClaudeStopReason;
   stop_sequence: string | null;
