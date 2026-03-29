@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type {
+  UpstreamFunctionCall,
   UpstreamRequest,
   UpstreamResponse,
   UpstreamStopReason,
@@ -21,6 +22,10 @@ type RawResponseLike = {
       type?: string;
       text?: string;
     }>;
+    id?: string;
+    call_id?: string;
+    name?: string;
+    arguments?: string;
   }>;
   usage?: RawUsage;
   stop_reason?: string | null;
@@ -55,7 +60,7 @@ function collectOutputText(output: RawResponseLike["output"]): string {
 }
 
 export function buildOpenAICodexRequestBody(request: UpstreamRequest, stream = true): Record<string, unknown> {
-  return {
+  const body: Record<string, unknown> = {
     model: request.model,
     input: request.input,
     max_output_tokens: request.maxOutputTokens,
@@ -66,6 +71,24 @@ export function buildOpenAICodexRequestBody(request: UpstreamRequest, stream = t
     store: false,
     stream,
   };
+  if (request.tools && request.tools.length > 0) {
+    body.tools = request.tools;
+  }
+  if (request.toolChoice !== undefined) {
+    body.tool_choice = request.toolChoice;
+  }
+  return body;
+}
+
+function extractFunctionCalls(output: RawResponseLike["output"]): UpstreamFunctionCall[] {
+  if (!Array.isArray(output)) return [];
+  return output
+    .filter((item) => item.type === "function_call")
+    .map((item) => ({
+      callId: item.call_id ?? item.id ?? "",
+      name: item.name ?? "",
+      arguments: item.arguments ?? "{}",
+    }));
 }
 
 export function extractOpenAICodexResponse(value: unknown): UpstreamResponse {
@@ -77,6 +100,7 @@ export function extractOpenAICodexResponse(value: unknown): UpstreamResponse {
     id: typeof response.id === "string" ? response.id : `resp_${randomUUID()}`,
     model: typeof response.model === "string" ? response.model : "gpt-5",
     outputText,
+    functionCalls: extractFunctionCalls(response.output),
     stopReason: mapStopReason(response.stop_reason),
     stopSequence: typeof response.stop_sequence === "string" ? response.stop_sequence : null,
     usage: {
@@ -165,6 +189,7 @@ export async function collectCompletedResponse(
       id: latestCreated.id,
       model: latestCreated.model,
       outputText: text,
+      functionCalls: [],
       stopReason: "end_turn",
       stopSequence: null,
       usage: {

@@ -42,6 +42,7 @@ describe("createOpenAICodexSseTransport", () => {
       id: "resp_1",
       model: "gpt-5",
       outputText: "Hello",
+      functionCalls: [],
       stopReason: "end_turn",
       stopSequence: null,
       usage: {

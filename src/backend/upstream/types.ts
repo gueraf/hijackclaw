@@ -10,9 +10,43 @@ export type UpstreamInputMessage = {
   content: UpstreamInputText[];
 };
 
+export type UpstreamTool = {
+  type: "function";
+  name: string;
+  description?: string;
+  parameters?: Record<string, unknown>;
+  strict?: boolean;
+};
+
+export type UpstreamFunctionCall = {
+  callId: string;
+  name: string;
+  arguments: string;
+};
+
+export type UpstreamFunctionCallInput = {
+  type: "function_call";
+  callId: string;
+  name: string;
+  arguments: string;
+};
+
+export type UpstreamFunctionCallOutput = {
+  type: "function_call_output";
+  callId: string;
+  output: string;
+};
+
+export type UpstreamInputItem =
+  | UpstreamInputMessage
+  | UpstreamFunctionCallInput
+  | UpstreamFunctionCallOutput;
+
 export type UpstreamRequest = {
   model: string;
-  input: UpstreamInputMessage[];
+  input: UpstreamInputItem[];
+  tools?: UpstreamTool[];
+  toolChoice?: unknown;
   maxOutputTokens?: number;
   temperature?: number;
   topP?: number;
@@ -31,6 +65,7 @@ export type UpstreamResponse = {
   id: string;
   model: string;
   outputText: string;
+  functionCalls?: UpstreamFunctionCall[];
   stopReason: UpstreamStopReason;
   stopSequence: string | null;
   usage: UpstreamUsage;
