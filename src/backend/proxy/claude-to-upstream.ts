@@ -17,9 +17,10 @@ import type {
 } from "./types.js";
 
 function toInputMessage(role: "system" | "user" | "assistant", text: string): UpstreamInputMessage {
+  const contentType = role === "assistant" ? "output_text" : "input_text";
   return {
     role,
-    content: [{ type: "input_text", text }],
+    content: [{ type: contentType, text }],
   };
 }
 
@@ -76,7 +77,7 @@ function translateAssistantContent(content: ClaudeContent): UpstreamInputItem[] 
       const tu = block as ClaudeToolUseBlock;
       items.push({
         type: "function_call",
-        callId: tu.id,
+        call_id: tu.id,
         name: tu.name,
         arguments: JSON.stringify(tu.input),
       } satisfies UpstreamFunctionCallInput);
@@ -101,7 +102,7 @@ function translateUserContent(content: ClaudeContent): UpstreamInputItem[] {
       const tr = block as ClaudeToolResultBlock;
       items.push({
         type: "function_call_output",
-        callId: tr.tool_use_id,
+        call_id: tr.tool_use_id,
         output: toolResultContentToString(tr.content),
       } satisfies UpstreamFunctionCallOutput);
     } else if (block.type !== "tool_use") {
@@ -128,15 +129,16 @@ export function translateClaudeRequestToUpstream(request: ClaudeMessagesRequest)
   }
 
   const input: UpstreamInputItem[] = [];
+  let instructions: string | undefined;
 
   if (typeof request.system === "string" && request.system.length > 0) {
-    input.push(toInputMessage("system", request.system));
+    instructions = request.system;
   } else if (Array.isArray(request.system) && request.system.length > 0) {
     const text = request.system
       .filter((b): b is ClaudeTextBlock => b.type === "text")
       .map((b) => b.text)
       .join("");
-    if (text) input.push(toInputMessage("system", text));
+    if (text) instructions = text;
   }
 
   for (const message of request.messages) {
@@ -149,6 +151,7 @@ export function translateClaudeRequestToUpstream(request: ClaudeMessagesRequest)
 
   const result: UpstreamRequest = {
     model: request.model,
+    instructions,
     input,
     maxOutputTokens: request.max_tokens,
     temperature: request.temperature,

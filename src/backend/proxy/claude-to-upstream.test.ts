@@ -22,8 +22,8 @@ describe("translateClaudeRequestToUpstream", () => {
 
     expect(result).toEqual({
       model: "gpt-5",
+      instructions: "You are concise.",
       input: [
-        { role: "system", content: [{ type: "input_text", text: "You are concise." }] },
         { role: "user", content: [{ type: "input_text", text: "Hello proxy" }] },
       ],
       maxOutputTokens: 128,
@@ -111,16 +111,16 @@ describe("translateClaudeRequestToUpstream", () => {
 
     expect(result.input).toEqual([
       { role: "user", content: [{ type: "input_text", text: "Read the file" }] },
-      { role: "assistant", content: [{ type: "input_text", text: "I'll read it." }] },
+      { role: "assistant", content: [{ type: "output_text", text: "I'll read it." }] },
       {
         type: "function_call",
-        callId: "toolu_01abc",
+        call_id: "toolu_01abc",
         name: "Read",
         arguments: '{"file_path":"/tmp/test.txt"}',
       },
       {
         type: "function_call_output",
-        callId: "toolu_01abc",
+        call_id: "toolu_01abc",
         output: "file contents here",
       },
     ]);

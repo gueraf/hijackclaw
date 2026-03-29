@@ -14,18 +14,23 @@ export type OpenAICodexWsTransportDeps = {
   baseUrl?: string;
   logger?: Logger;
   createSocket?: WebSocketFactory;
+  /** Max ms to wait for the first upstream event after sending. Default 30 000. */
+  firstEventTimeoutMs?: number;
 };
 
 class AsyncQueue<T> {
   private readonly values: T[] = [];
-  private readonly resolvers: Array<(value: IteratorResult<T>) => void> = [];
+  private readonly waiters: Array<{
+    resolve: (value: IteratorResult<T>) => void;
+    reject: (error: Error) => void;
+  }> = [];
   private done = false;
   private error: Error | null = null;
 
   push(value: T): void {
-    const resolver = this.resolvers.shift();
-    if (resolver) {
-      resolver({ done: false, value });
+    const waiter = this.waiters.shift();
+    if (waiter) {
+      waiter.resolve({ done: false, value });
       return;
     }
     this.values.push(value);
@@ -33,14 +38,18 @@ class AsyncQueue<T> {
 
   fail(error: Error): void {
     this.error = error;
-    this.finish();
+    this.done = true;
+    while (this.waiters.length > 0) {
+      const waiter = this.waiters.shift();
+      waiter?.reject(error);
+    }
   }
 
   finish(): void {
     this.done = true;
-    while (this.resolvers.length > 0) {
-      const resolver = this.resolvers.shift();
-      resolver?.({ done: true, value: undefined });
+    while (this.waiters.length > 0) {
+      const waiter = this.waiters.shift();
+      waiter?.resolve({ done: true, value: undefined });
     }
   }
 
@@ -54,8 +63,8 @@ class AsyncQueue<T> {
     if (this.done) {
       return { done: true, value: undefined };
     }
-    return await new Promise<IteratorResult<T>>((resolve) => {
-      this.resolvers.push(resolve);
+    return await new Promise<IteratorResult<T>>((resolve, reject) => {
+      this.waiters.push({ resolve, reject });
     });
   }
 }
@@ -64,12 +73,14 @@ export class OpenAICodexWsTransport implements UpstreamTransport {
   private readonly baseUrl: string;
   private readonly logger: Logger;
   private readonly createSocket: WebSocketFactory;
+  private readonly firstEventTimeoutMs: number;
   private readonly sockets = new Set<WebSocket>();
 
   constructor(private readonly deps: OpenAICodexWsTransportDeps) {
     this.baseUrl = (deps.baseUrl ?? "wss://chatgpt.com/backend-api/codex").replace(/\/+$/, "");
     this.logger = deps.logger ?? console;
     this.createSocket = deps.createSocket ?? ((url, options) => new WebSocket(url, [], options));
+    this.firstEventTimeoutMs = deps.firstEventTimeoutMs ?? 30_000;
   }
 
   async createMessage(request: UpstreamRequest) {
@@ -87,6 +98,15 @@ export class OpenAICodexWsTransport implements UpstreamTransport {
     this.sockets.add(socket);
     const queue = new AsyncQueue<UpstreamStreamEvent>();
     let completed = false;
+    let receivedAnyEvent = false;
+
+    let firstEventTimer: ReturnType<typeof setTimeout> | null = null;
+    const clearTimer = () => {
+      if (firstEventTimer !== null) {
+        clearTimeout(firstEventTimer);
+        firstEventTimer = null;
+      }
+    };
 
     socket.once("open", () => {
       this.logger.info("OpenAI Codex websocket opened");
@@ -96,30 +116,43 @@ export class OpenAICodexWsTransport implements UpstreamTransport {
           response: buildOpenAICodexRequestBody(request, true),
         }),
       );
+
+      firstEventTimer = setTimeout(() => {
+        if (!receivedAnyEvent) {
+          this.logger.warn(`No upstream events within ${this.firstEventTimeoutMs}ms, closing websocket`);
+          queue.fail(new Error(`WebSocket response timeout: no events received within ${this.firstEventTimeoutMs}ms`));
+          socket.close();
+        }
+      }, this.firstEventTimeoutMs);
     });
 
     socket.on("message", (data) => {
       try {
         const parsed = JSON.parse(data.toString("utf8")) as unknown;
-        const normalized = normalizeOpenAICodexEvent(parsed);
+        const normalized = normalizeOpenAICodexEvent(parsed, this.logger);
         if (!normalized) {
           return;
         }
+        receivedAnyEvent = true;
+        clearTimer();
         queue.push(normalized);
         if (normalized.type === "response.completed") {
           completed = true;
           socket.close();
         }
       } catch (error) {
+        clearTimer();
         queue.fail(error instanceof Error ? error : new Error(String(error)));
       }
     });
 
     socket.once("error", (error) => {
+      clearTimer();
       queue.fail(error instanceof Error ? error : new Error(String(error)));
     });
 
     socket.once("close", () => {
+      clearTimer();
       this.logger.info("OpenAI Codex websocket closed");
       this.sockets.delete(socket);
       if (!completed) {

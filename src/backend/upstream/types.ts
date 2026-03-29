@@ -5,9 +5,14 @@ export type UpstreamInputText = {
   text: string;
 };
 
+export type UpstreamOutputText = {
+  type: "output_text";
+  text: string;
+};
+
 export type UpstreamInputMessage = {
   role: UpstreamRole;
-  content: UpstreamInputText[];
+  content: Array<UpstreamInputText | UpstreamOutputText>;
 };
 
 export type UpstreamTool = {
@@ -26,14 +31,14 @@ export type UpstreamFunctionCall = {
 
 export type UpstreamFunctionCallInput = {
   type: "function_call";
-  callId: string;
+  call_id: string;
   name: string;
   arguments: string;
 };
 
 export type UpstreamFunctionCallOutput = {
   type: "function_call_output";
-  callId: string;
+  call_id: string;
   output: string;
 };
 
@@ -44,6 +49,7 @@ export type UpstreamInputItem =
 
 export type UpstreamRequest = {
   model: string;
+  instructions?: string;
   input: UpstreamInputItem[];
   tools?: UpstreamTool[];
   toolChoice?: unknown;

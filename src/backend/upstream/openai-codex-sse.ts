@@ -38,7 +38,11 @@ export class OpenAICodexSseTransport implements UpstreamTransport {
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI Codex SSE request failed: ${response.status}`);
+      let detail = "";
+      try {
+        detail = await response.text();
+      } catch {}
+      throw new Error(`OpenAI Codex SSE request failed: ${response.status}${detail ? ` — ${detail}` : ""}`);
     }
     if (!response.body) {
       throw new Error("OpenAI Codex SSE response body was empty");
@@ -68,7 +72,7 @@ export class OpenAICodexSseTransport implements UpstreamTransport {
         if (!parsed) {
           continue;
         }
-        const normalized = normalizeOpenAICodexEvent(parsed);
+        const normalized = normalizeOpenAICodexEvent(parsed, this.logger);
         if (normalized) {
           yield normalized;
         }
@@ -79,7 +83,7 @@ export class OpenAICodexSseTransport implements UpstreamTransport {
     if (tail) {
       const parsed = parseSseDataLines(tail);
       if (parsed) {
-        const normalized = normalizeOpenAICodexEvent(parsed);
+        const normalized = normalizeOpenAICodexEvent(parsed, this.logger);
         if (normalized) {
           yield normalized;
         }

@@ -25,25 +25,51 @@ HijackClaw solves this by routing Claude Code's API requests through your existi
 
 Your auth tokens are stored locally in `~/.hijackclaw/auth.json` and refresh automatically — no browser needed after the initial login.
 
-## Install
-
-```bash
-npm install
-```
-
 ## Quick Start
 
 ```bash
-npm run build
-npm start
+npm install
+npm run build:cli
+
+# Authenticate with your ChatGPT account
+hijackclaw login
+
+# Install daemon + shell hook (adds env vars to new shells when proxy is alive)
+hijackclaw install
+
+# Open a new terminal — Claude Code now routes through OpenAI
 ```
 
-Then open `http://localhost:8080`, sign in with ChatGPT, and start the runtime.
+### CLI Commands
 
-For development with hot reload:
+| Command | Description |
+|---------|-------------|
+| `hijackclaw login` | Browser-based OAuth PKCE login with your ChatGPT account |
+| `hijackclaw install` | Install launchd daemon + shell hook in `.zshrc`/`.bashrc` |
+| `hijackclaw uninstall` | Remove daemon, shell hook, and env files |
+| `hijackclaw uninstall --purge` | Also remove auth tokens and config |
+| `hijackclaw serve` | Run the proxy in the foreground (used by launchd) |
+| `hijackclaw status` | Check proxy, auth, and install state |
+
+### Configuration
+
+Config lives at `~/.hijackclaw/config.json`:
+
+```json
+{
+  "port": 8082,
+  "model": "gpt-5.4",
+  "smallFastModel": "gpt-5.4-mini"
+}
+```
+
+### Web UI
+
+For the operator console with login, runtime control, and session visibility:
 
 ```bash
-npm run dev
+npm run build   # full build (frontend + backend)
+npm start       # or: npm run dev for hot reload
 ```
 
 ## Architecture
@@ -65,22 +91,25 @@ OpenAI Codex Backend
 ```
 
 **Key properties:**
-- No shell profile edits, no OS proxy changes, no Claude config modifications
-- `ANTHROPIC_*` env vars are injected only into the managed Claude child process
-- Auth tokens are stored locally and refresh automatically
-- WebSocket transport with automatic SSE fallback
+- Shell hook conditionally exports `ANTHROPIC_*` env vars only when the proxy is alive (`nc -z` guard)
+- When the proxy is down, Claude Code works normally against Anthropic
+- Auth tokens stored locally with automatic refresh
+- WebSocket transport with automatic SSE fallback and 30s timeout
+- Full tool use support (function calls + results round-trip)
 
-## Test
+## Development
 
 ```bash
-npm test
-npm run check
+npm run dev          # Backend + frontend with hot reload
+npm test             # Run tests
+npm run check        # TypeScript type checking
+npm run build        # Full production build
+npm run build:cli    # Backend only
 ```
 
 ## Current Limitations
 
-- Tool calling is not yet implemented (text-only responses)
-- Unsupported Anthropic features fail explicitly rather than degrading silently
+- Unsupported Anthropic features (e.g. image content blocks) fail explicitly rather than degrading silently
 
 ## Disclaimer
 

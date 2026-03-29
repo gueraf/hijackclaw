@@ -15,7 +15,7 @@ export type ProxyRouteDeps = {
   logger?: Logger;
 };
 
-const DEFAULT_MODELS = ["gpt-5", "gpt-5-mini"];
+const DEFAULT_MODELS = ["gpt-5.4", "gpt-5.4-mini"];
 
 function sendProxyError(response: Response, message: string, statusCode: number): void {
   const body: ClaudeErrorResponse = {

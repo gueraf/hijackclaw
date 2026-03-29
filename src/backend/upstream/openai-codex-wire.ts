@@ -62,12 +62,8 @@ function collectOutputText(output: RawResponseLike["output"]): string {
 export function buildOpenAICodexRequestBody(request: UpstreamRequest, stream = true): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model: request.model,
+    instructions: request.instructions ?? "",
     input: request.input,
-    max_output_tokens: request.maxOutputTokens,
-    temperature: request.temperature,
-    top_p: request.topP,
-    stop: request.stopSequences,
-    metadata: request.metadata,
     store: false,
     stream,
   };
@@ -110,7 +106,7 @@ export function extractOpenAICodexResponse(value: unknown): UpstreamResponse {
   };
 }
 
-export function normalizeOpenAICodexEvent(value: unknown): UpstreamStreamEvent | null {
+export function normalizeOpenAICodexEvent(value: unknown, logger?: Pick<Console, "info">): UpstreamStreamEvent | null {
   if (!value || typeof value !== "object") {
     return null;
   }
@@ -158,6 +154,10 @@ export function normalizeOpenAICodexEvent(value: unknown): UpstreamStreamEvent |
           ? event.error
           : "OpenAI Codex transport error";
     throw new Error(message);
+  }
+
+  if (type) {
+    logger?.info(`Unhandled upstream event type: ${type}`);
   }
 
   return null;

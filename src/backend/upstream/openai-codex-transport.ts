@@ -42,8 +42,15 @@ export class OpenAICodexTransport implements UpstreamTransport {
   async *streamMessage(request: UpstreamRequest): AsyncGenerator<UpstreamStreamEvent> {
     try {
       this.deps.onModeChange?.("ws");
-      yield* this.wsTransport.streamMessage(request);
-      return;
+      let yieldedAny = false;
+      for await (const event of this.wsTransport.streamMessage(request)) {
+        yieldedAny = true;
+        yield event;
+      }
+      if (yieldedAny) {
+        return;
+      }
+      this.logger.warn("Falling back from WebSocket to SSE transport: WebSocket stream completed with no events");
     } catch (error) {
       this.logger.warn(`Falling back from WebSocket to SSE transport: ${error instanceof Error ? error.message : String(error)}`);
     }

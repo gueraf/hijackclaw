@@ -9,8 +9,8 @@ export type DaemonConfig = {
 
 export const DEFAULT_CONFIG: DaemonConfig = {
   port: 8082,
-  model: "gpt-5",
-  smallFastModel: "gpt-5-mini",
+  model: "gpt-5.4",
+  smallFastModel: "gpt-5.4-mini",
 };
 
 export function readConfig(filePath: string): DaemonConfig {
