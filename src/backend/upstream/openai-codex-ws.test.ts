@@ -40,16 +40,16 @@ describe("createOpenAICodexWsTransport", () => {
       socket.once("message", (payload) => {
         const parsed = JSON.parse(payload.toString("utf8")) as { type: string; response: { model: string } };
         expect(parsed.type).toBe("response.create");
-        expect(parsed.response.model).toBe("gpt-5");
+        expect(parsed.response.model).toBe("gpt-5.4");
 
-        socket.send(JSON.stringify({ type: "response.created", response: { id: "resp_ws", model: "gpt-5" } }));
+        socket.send(JSON.stringify({ type: "response.created", response: { id: "resp_ws", model: "gpt-5.4" } }));
         socket.send(JSON.stringify({ type: "response.output_text.delta", delta: "Hello from ws" }));
         socket.send(
           JSON.stringify({
             type: "response.completed",
             response: {
               id: "resp_ws",
-              model: "gpt-5",
+              model: "gpt-5.4",
               output_text: "Hello from ws",
               usage: {
                 input_tokens: 9,
@@ -74,7 +74,7 @@ describe("createOpenAICodexWsTransport", () => {
     });
 
     const response = await transport.createMessage({
-      model: "gpt-5",
+      model: "gpt-5.4",
       input: [{ role: "user", content: [{ type: "input_text", text: "Hello" }] }],
     });
 
@@ -124,7 +124,7 @@ describe("createOpenAICodexWsTransport", () => {
 
     await expect(
       transport.createMessage({
-        model: "gpt-5",
+        model: "gpt-5.4",
         input: [{ role: "user", content: [{ type: "input_text", text: "Hello" }] }],
       }),
     ).rejects.toThrow(/timeout/i);

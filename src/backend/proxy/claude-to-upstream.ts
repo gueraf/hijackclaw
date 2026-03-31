@@ -16,6 +16,45 @@ import type {
   ClaudeToolUseBlock,
 } from "./types.js";
 
+type TranslateClaudeRequestOptions = {
+  reasoningModel?: string;
+};
+
+function translateReasoning(
+  request: ClaudeMessagesRequest,
+  options?: TranslateClaudeRequestOptions,
+): { effort?: "low" | "medium" | "high" } | undefined {
+  const explicitEffort = request.output_config?.effort;
+  if (explicitEffort) {
+    return { effort: explicitEffort };
+  }
+
+  const budget = request.thinking?.budget_tokens;
+  if (typeof budget === "number") {
+    if (budget <= 2048) {
+      return { effort: "low" };
+    }
+    if (budget <= 8192) {
+      return { effort: "medium" };
+    }
+    return { effort: "high" };
+  }
+
+  const reasoningModel = options?.reasoningModel ?? request.model;
+
+  if (reasoningModel.includes("haiku")) {
+    return { effort: "low" };
+  }
+  if (reasoningModel.includes("opus")) {
+    return { effort: "high" };
+  }
+  if (reasoningModel.includes("sonnet")) {
+    return { effort: "medium" };
+  }
+
+  return undefined;
+}
+
 function toInputMessage(role: "system" | "user" | "assistant", text: string): UpstreamInputMessage {
   const contentType = role === "assistant" ? "output_text" : "input_text";
   return {
@@ -117,7 +156,10 @@ function translateUserContent(content: ClaudeContent): UpstreamInputItem[] {
   return items;
 }
 
-export function translateClaudeRequestToUpstream(request: ClaudeMessagesRequest): UpstreamRequest {
+export function translateClaudeRequestToUpstream(
+  request: ClaudeMessagesRequest,
+  options?: TranslateClaudeRequestOptions,
+): UpstreamRequest {
   if (!request || typeof request !== "object") {
     throw new ProxyValidationError("Request body must be a JSON object");
   }
@@ -149,10 +191,13 @@ export function translateClaudeRequestToUpstream(request: ClaudeMessagesRequest)
     }
   }
 
+  const reasoning = translateReasoning(request, options);
+
   const result: UpstreamRequest = {
     model: request.model,
     instructions,
     input,
+    reasoning,
     maxOutputTokens: request.max_tokens,
     temperature: request.temperature,
     topP: request.top_p,

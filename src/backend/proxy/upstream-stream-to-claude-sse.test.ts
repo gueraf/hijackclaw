@@ -24,7 +24,7 @@ describe("translateUpstreamStreamToClaudeSse", () => {
           {
             type: "response.created",
             id: "resp_1",
-            model: "gpt-5",
+            model: "gpt-5.4",
           },
           {
             type: "response.output_text.delta",
@@ -38,7 +38,7 @@ describe("translateUpstreamStreamToClaudeSse", () => {
             type: "response.completed",
             response: {
               id: "resp_1",
-              model: "gpt-5",
+              model: "gpt-5.4",
               outputText: "Hello world",
               stopReason: "end_turn",
               stopSequence: null,
@@ -49,7 +49,7 @@ describe("translateUpstreamStreamToClaudeSse", () => {
             },
           },
         ]),
-        { model: "gpt-5", messageId: "msg_abc" },
+        { model: "gpt-5.4", messageId: "msg_abc" },
       ),
     );
 
@@ -72,7 +72,7 @@ describe("translateUpstreamStreamToClaudeSse", () => {
           {
             type: "response.created",
             id: "resp_2",
-            model: "gpt-5",
+            model: "gpt-5.4",
           },
           {
             type: "response.output_text.delta",
@@ -82,7 +82,7 @@ describe("translateUpstreamStreamToClaudeSse", () => {
             type: "response.completed",
             response: {
               id: "resp_2",
-              model: "gpt-5",
+              model: "gpt-5.4",
               outputText: "Reading file.",
               functionCalls: [
                 {
@@ -97,7 +97,7 @@ describe("translateUpstreamStreamToClaudeSse", () => {
             },
           },
         ]),
-        { model: "gpt-5", messageId: "msg_tool" },
+        { model: "gpt-5.4", messageId: "msg_tool" },
       ),
     );
 

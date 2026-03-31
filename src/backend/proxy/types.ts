@@ -48,6 +48,13 @@ export type ClaudeMessagesRequest = {
   stream?: boolean;
   tools?: ClaudeToolDefinition[];
   tool_choice?: unknown;
+  thinking?: {
+    type?: string;
+    budget_tokens?: number;
+  };
+  output_config?: {
+    effort?: "low" | "medium" | "high";
+  };
 };
 
 export type ClaudeStopReason = "end_turn" | "max_tokens" | "stop_sequence" | "tool_use" | null;

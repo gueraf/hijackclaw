@@ -12,6 +12,7 @@ type Logger = Pick<Console, "info" | "warn" | "error">;
 export type ProxyRouteDeps = {
   upstreamTransport: UpstreamTransport;
   models?: string[];
+  modelMap?: Record<string, string>;
   logger?: Logger;
 };
 
@@ -76,7 +77,15 @@ export function registerProxyRoutes(app: Pick<Express, "get" | "post">, deps: Pr
     let claudeRequest: ClaudeMessagesRequest;
     try {
       claudeRequest = parseClaudeBody(request);
-      const upstreamRequest = translateClaudeRequestToUpstream(claudeRequest);
+      const requestedModel = claudeRequest.model;
+      const upstreamModel = deps.modelMap?.[requestedModel] ?? requestedModel;
+      const upstreamRequest = translateClaudeRequestToUpstream({
+        ...claudeRequest,
+        model: upstreamModel,
+      }, { reasoningModel: requestedModel });
+      logger.info(
+        `Proxying model ${requestedModel} -> ${upstreamModel} with reasoning effort ${upstreamRequest.reasoning?.effort ?? "unset"}`,
+      );
 
       if (claudeRequest.stream) {
         response.status(200);

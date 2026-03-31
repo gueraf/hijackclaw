@@ -5,7 +5,7 @@ import { translateClaudeRequestToUpstream } from "./claude-to-upstream.js";
 describe("translateClaudeRequestToUpstream", () => {
   it("maps a text-only Claude request into an upstream responses-style request", () => {
     const result = translateClaudeRequestToUpstream({
-      model: "gpt-5",
+      model: "gpt-5.4",
       system: "You are concise.",
       max_tokens: 128,
       temperature: 0.2,
@@ -21,7 +21,7 @@ describe("translateClaudeRequestToUpstream", () => {
     });
 
     expect(result).toEqual({
-      model: "gpt-5",
+      model: "gpt-5.4",
       instructions: "You are concise.",
       input: [
         { role: "user", content: [{ type: "input_text", text: "Hello proxy" }] },
@@ -33,10 +33,48 @@ describe("translateClaudeRequestToUpstream", () => {
     });
   });
 
+  it("keeps the provided model unchanged", () => {
+    const result = translateClaudeRequestToUpstream({
+      model: "gpt-5.4",
+      messages: [{ role: "user", content: "Hello proxy" }],
+    });
+
+    expect(result.model).toBe("gpt-5.4");
+  });
+
+  it("maps explicit output_config effort to upstream reasoning", () => {
+    const result = translateClaudeRequestToUpstream({
+      model: "gpt-5.4",
+      output_config: { effort: "high" },
+      messages: [{ role: "user", content: "Hello proxy" }],
+    });
+
+    expect(result.reasoning).toEqual({ effort: "high" });
+  });
+
+  it("maps thinking budget to medium reasoning effort", () => {
+    const result = translateClaudeRequestToUpstream({
+      model: "gpt-5.4",
+      thinking: { type: "enabled", budget_tokens: 4096 },
+      messages: [{ role: "user", content: "Hello proxy" }],
+    });
+
+    expect(result.reasoning).toEqual({ effort: "medium" });
+  });
+
+  it("derives reasoning effort from mapped Claude model family", () => {
+    const result = translateClaudeRequestToUpstream({
+      model: "claude-opus",
+      messages: [{ role: "user", content: "Hello proxy" }],
+    });
+
+    expect(result.reasoning).toEqual({ effort: "high" });
+  });
+
   it("throws for non-text non-tool content blocks", () => {
     expect(() =>
       translateClaudeRequestToUpstream({
-        model: "gpt-5",
+        model: "gpt-5.4",
         messages: [
           {
             role: "user",
@@ -49,7 +87,7 @@ describe("translateClaudeRequestToUpstream", () => {
 
   it("translates tool definitions to upstream function format", () => {
     const result = translateClaudeRequestToUpstream({
-      model: "gpt-5",
+      model: "gpt-5.4",
       tools: [
         {
           name: "Read",
@@ -80,7 +118,7 @@ describe("translateClaudeRequestToUpstream", () => {
 
   it("translates assistant tool_use and user tool_result messages", () => {
     const result = translateClaudeRequestToUpstream({
-      model: "gpt-5",
+      model: "gpt-5.4",
       tools: [{ name: "Read", input_schema: { type: "object" } }],
       messages: [
         { role: "user", content: "Read the file" },
@@ -128,7 +166,7 @@ describe("translateClaudeRequestToUpstream", () => {
 
   it("translates tool_choice", () => {
     const result = translateClaudeRequestToUpstream({
-      model: "gpt-5",
+      model: "gpt-5.4",
       tools: [{ name: "Read", input_schema: { type: "object" } }],
       tool_choice: { type: "any" },
       messages: [{ role: "user", content: "go" }],

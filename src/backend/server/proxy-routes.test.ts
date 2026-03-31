@@ -4,12 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 import type { UpstreamTransport } from "../upstream/types.js";
 import { registerProxyRoutes } from "./proxy-routes.js";
 
-function createApp(upstreamTransport: UpstreamTransport) {
+function createApp(upstreamTransport: UpstreamTransport, modelMap?: Record<string, string>) {
   const app = express();
   app.use(express.json());
   registerProxyRoutes(app, {
     upstreamTransport,
-    models: ["gpt-5", "gpt-5-mini"],
+    models: ["gpt-5.4", "gpt-5.4-mini"],
+    modelMap,
     logger: console,
   });
   return app;
@@ -19,7 +20,7 @@ async function* mockStream() {
   yield {
     type: "response.created" as const,
     id: "resp_stream",
-    model: "gpt-5",
+    model: "gpt-5.4",
   };
 
   yield {
@@ -31,7 +32,7 @@ async function* mockStream() {
     type: "response.completed" as const,
     response: {
       id: "resp_stream",
-      model: "gpt-5",
+      model: "gpt-5.4",
       outputText: "Hello",
       stopReason: "end_turn" as const,
       stopSequence: null,
@@ -66,14 +67,14 @@ describe("registerProxyRoutes", () => {
     const response = await request(app).get("/v1/models");
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(2);
-    expect(response.body.data[0].id).toBe("gpt-5");
+    expect(response.body.data[0].id).toBe("gpt-5.4");
   });
 
   it("maps non-stream /v1/messages response", async () => {
     const upstreamTransport: UpstreamTransport = {
       createMessage: vi.fn(async () => ({
         id: "resp_1",
-        model: "gpt-5",
+        model: "gpt-5.4",
         outputText: "Hello from upstream",
         stopReason: "end_turn",
         stopSequence: null,
@@ -88,7 +89,7 @@ describe("registerProxyRoutes", () => {
 
     const app = createApp(upstreamTransport);
     const response = await request(app).post("/v1/messages").send({
-      model: "gpt-5",
+      model: "gpt-5.4",
       messages: [{ role: "user", content: [{ type: "text", text: "Hi" }] }],
       stream: false,
     });
@@ -97,6 +98,40 @@ describe("registerProxyRoutes", () => {
     expect(response.body.type).toBe("message");
     expect(response.body.content[0].text).toBe("Hello from upstream");
     expect(response.body.usage.output_tokens).toBe(4);
+  });
+
+  it("maps incoming Anthropic models before calling upstream", async () => {
+    const upstreamTransport: UpstreamTransport = {
+      createMessage: vi.fn(async () => ({
+        id: "resp_1",
+        model: "gpt-5.4-mini",
+        outputText: "Hello from upstream",
+        stopReason: "end_turn",
+        stopSequence: null,
+        usage: {
+          inputTokens: 9,
+          outputTokens: 4,
+        },
+      })),
+      streamMessage: vi.fn(),
+      close: vi.fn(async () => undefined),
+    };
+
+    const app = createApp(upstreamTransport, {
+      "claude-haiku-4-5-20251001": "gpt-5.4-mini",
+      "claude-sonnet-4-6": "gpt-5.4",
+      "claude-opus": "gpt-5.4",
+    });
+    const response = await request(app).post("/v1/messages").send({
+      model: "claude-haiku-4-5-20251001",
+      messages: [{ role: "user", content: [{ type: "text", text: "Hi" }] }],
+      stream: false,
+    });
+
+    expect(response.status).toBe(200);
+    expect(upstreamTransport.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ model: "gpt-5.4-mini", reasoning: { effort: "low" } }),
+    );
   });
 
   it("streams Claude SSE events for stream=true", async () => {
@@ -113,7 +148,7 @@ describe("registerProxyRoutes", () => {
     const response = await request(app)
       .post("/v1/messages")
       .send({
-        model: "gpt-5",
+        model: "gpt-5.4",
         messages: [{ role: "user", content: [{ type: "text", text: "Hi" }] }],
         stream: true,
       })
@@ -142,7 +177,7 @@ describe("registerProxyRoutes", () => {
     });
 
     const response = await request(app).post("/v1/messages").send({
-      model: "gpt-5",
+        model: "gpt-5.4",
       messages: [
         {
           role: "user",
