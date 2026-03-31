@@ -37,6 +37,8 @@ hijackclaw login
 
 # Install daemon + shell hook (adds env vars to new shells when proxy is alive)
 hijackclaw install
+# Run the proxy that reroutes Anthropic calls to OpenAI
+hijackclaw serve
 
 # Open a new terminal — Claude Code now routes through OpenAI
 ```
