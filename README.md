@@ -41,6 +41,7 @@ hijackclaw install
 hijackclaw serve
 
 # Open a new terminal — Claude Code now routes through OpenAI
+claude
 ```
 
 ### CLI Commands
