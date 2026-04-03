@@ -99,6 +99,56 @@ describe("registerProxyRoutes", () => {
     expect(response.body.usage.output_tokens).toBe(4);
   });
 
+  it("maps documented Claude aliases and model IDs to the configured upstream models", async () => {
+    const cases: Array<{ inputModel: string; expectedModel: string }> = [
+      { inputModel: "haiku", expectedModel: "gpt-5-mini" },
+      { inputModel: "claude-haiku-4-5-20251001", expectedModel: "gpt-5-mini" },
+      { inputModel: "claude-3-5-haiku-20241022", expectedModel: "gpt-5-mini" },
+      { inputModel: "best", expectedModel: "gpt-5" },
+      { inputModel: "default", expectedModel: "gpt-5" },
+      { inputModel: "sonnet[1m]", expectedModel: "gpt-5" },
+      { inputModel: "claude-3-7-sonnet-20250219", expectedModel: "gpt-5" },
+      { inputModel: "opus[1m]", expectedModel: "gpt-5" },
+      { inputModel: "claude-3-opus-20240229", expectedModel: "gpt-5" },
+      { inputModel: "opusplan", expectedModel: "gpt-5" },
+    ];
+    let index = 0;
+
+    const upstreamTransport: UpstreamTransport = {
+      createMessage: vi.fn(async (request) => {
+        const current = cases[index];
+        expect(request.model).toBe(current.expectedModel);
+        return {
+          id: `resp_${index}`,
+          model: current.expectedModel,
+          outputText: "Hello from upstream",
+          stopReason: "end_turn",
+          stopSequence: null,
+          usage: {
+            inputTokens: 9,
+            outputTokens: 4,
+          },
+        };
+      }),
+      streamMessage: vi.fn(),
+      close: vi.fn(async () => undefined),
+    };
+
+    const app = createApp(upstreamTransport);
+
+    for (const current of cases) {
+      const response = await request(app).post("/v1/messages").send({
+        model: current.inputModel,
+        messages: [{ role: "user", content: [{ type: "text", text: "Hi" }] }],
+        stream: false,
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body.model).toBe(current.expectedModel);
+      index += 1;
+    }
+  });
+
   it("streams Claude SSE events for stream=true", async () => {
     const upstreamTransport: UpstreamTransport = {
       createMessage: vi.fn(),
