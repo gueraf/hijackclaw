@@ -18,6 +18,46 @@ export type ProxyRouteDeps = {
 
 const DEFAULT_MODELS = ["gpt-5.4", "gpt-5.4-mini"];
 
+function normalizeModelName(model: string): string {
+  return model.trim().toLowerCase().replace(/\[1m\]$/i, "");
+}
+
+function isClaudeFamilyModel(normalizedModel: string, family: "haiku" | "sonnet" | "opus"): boolean {
+  return normalizedModel.startsWith("claude-") && normalizedModel.includes(`-${family}-`);
+}
+
+function resolveUpstreamModel(model: string, configuredModels?: string[]): string {
+  const catalog = configuredModels ?? DEFAULT_MODELS;
+  const primaryModel = catalog[0] ?? DEFAULT_MODELS[0];
+  const smallFastModel = catalog[1] ?? primaryModel;
+  const normalized = normalizeModelName(model);
+
+  if (catalog.includes(model)) {
+    return model;
+  }
+
+  if (
+    normalized === "haiku" ||
+    isClaudeFamilyModel(normalized, "haiku")
+  ) {
+    return smallFastModel;
+  }
+
+  if (
+    normalized === "sonnet" ||
+    normalized === "opus" ||
+    normalized === "best" ||
+    normalized === "default" ||
+    normalized === "opusplan" ||
+    isClaudeFamilyModel(normalized, "sonnet") ||
+    isClaudeFamilyModel(normalized, "opus")
+  ) {
+    return primaryModel;
+  }
+
+  return model;
+}
+
 function sendProxyError(response: Response, message: string, statusCode: number): void {
   const body: ClaudeErrorResponse = {
     type: "error",
@@ -78,7 +118,7 @@ export function registerProxyRoutes(app: Pick<Express, "get" | "post">, deps: Pr
     try {
       claudeRequest = parseClaudeBody(request);
       const requestedModel = claudeRequest.model;
-      const upstreamModel = deps.modelMap?.[requestedModel] ?? requestedModel;
+      const upstreamModel = deps.modelMap?.[requestedModel] ?? resolveUpstreamModel(requestedModel, deps.models);
       const upstreamRequest = translateClaudeRequestToUpstream({
         ...claudeRequest,
         model: upstreamModel,

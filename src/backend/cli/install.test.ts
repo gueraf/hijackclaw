@@ -31,6 +31,10 @@ describe("install", () => {
       expect(script).toContain('export ANTHROPIC_AUTH_TOKEN="hijackclaw"');
       expect(script).toContain(`export ANTHROPIC_MODEL="${DEFAULT_CONFIG.model}"`);
       expect(script).toContain(`export ANTHROPIC_SMALL_FAST_MODEL="${DEFAULT_CONFIG.smallFastModel}"`);
+      expect(script).toContain(`export ANTHROPIC_DEFAULT_OPUS_MODEL="${DEFAULT_CONFIG.model}"`);
+      expect(script).toContain(`export ANTHROPIC_DEFAULT_SONNET_MODEL="${DEFAULT_CONFIG.model}"`);
+      expect(script).toContain(`export ANTHROPIC_DEFAULT_HAIKU_MODEL="${DEFAULT_CONFIG.smallFastModel}"`);
+      expect(script).toContain(`export CLAUDE_CODE_SUBAGENT_MODEL="${DEFAULT_CONFIG.smallFastModel}"`);
     });
   });
 

@@ -23,6 +23,10 @@ if nc -z 127.0.0.1 ${config.port} 2>/dev/null; then
   export ANTHROPIC_AUTH_TOKEN="hijackclaw"
   export ANTHROPIC_MODEL="${config.model}"
   export ANTHROPIC_SMALL_FAST_MODEL="${config.smallFastModel}"
+  export ANTHROPIC_DEFAULT_OPUS_MODEL="${config.model}"
+  export ANTHROPIC_DEFAULT_SONNET_MODEL="${config.model}"
+  export ANTHROPIC_DEFAULT_HAIKU_MODEL="${config.smallFastModel}"
+  export CLAUDE_CODE_SUBAGENT_MODEL="${config.smallFastModel}"
 fi
 `;
 }

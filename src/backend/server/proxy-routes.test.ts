@@ -100,7 +100,57 @@ describe("registerProxyRoutes", () => {
     expect(response.body.usage.output_tokens).toBe(4);
   });
 
-  it("maps incoming Anthropic models before calling upstream", async () => {
+  it("maps documented Claude aliases and model IDs to the configured upstream models", async () => {
+    const cases: Array<{ inputModel: string; expectedModel: string }> = [
+      { inputModel: "haiku", expectedModel: "gpt-5.4-mini" },
+      { inputModel: "claude-haiku-4-5-20251001", expectedModel: "gpt-5.4-mini" },
+      { inputModel: "claude-3-5-haiku-20241022", expectedModel: "gpt-5.4-mini" },
+      { inputModel: "best", expectedModel: "gpt-5.4" },
+      { inputModel: "default", expectedModel: "gpt-5.4" },
+      { inputModel: "sonnet[1m]", expectedModel: "gpt-5.4" },
+      { inputModel: "claude-3-7-sonnet-20250219", expectedModel: "gpt-5.4" },
+      { inputModel: "opus[1m]", expectedModel: "gpt-5.4" },
+      { inputModel: "claude-3-opus-20240229", expectedModel: "gpt-5.4" },
+      { inputModel: "opusplan", expectedModel: "gpt-5.4" },
+    ];
+    let index = 0;
+
+    const upstreamTransport: UpstreamTransport = {
+      createMessage: vi.fn(async (req) => {
+        const current = cases[index];
+        expect(req.model).toBe(current.expectedModel);
+        return {
+          id: `resp_${index}`,
+          model: current.expectedModel,
+          outputText: "Hello from upstream",
+          stopReason: "end_turn",
+          stopSequence: null,
+          usage: {
+            inputTokens: 9,
+            outputTokens: 4,
+          },
+        };
+      }),
+      streamMessage: vi.fn(),
+      close: vi.fn(async () => undefined),
+    };
+
+    const app = createApp(upstreamTransport);
+
+    for (const current of cases) {
+      const response = await request(app).post("/v1/messages").send({
+        model: current.inputModel,
+        messages: [{ role: "user", content: [{ type: "text", text: "Hi" }] }],
+        stream: false,
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body.model).toBe(current.expectedModel);
+      index += 1;
+    }
+  });
+
+  it("maps incoming Anthropic models via modelMap before calling upstream", async () => {
     const upstreamTransport: UpstreamTransport = {
       createMessage: vi.fn(async () => ({
         id: "resp_1",
