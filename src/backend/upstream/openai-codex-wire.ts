@@ -73,6 +73,9 @@ export function buildOpenAICodexRequestBody(request: UpstreamRequest, stream = t
   if (request.toolChoice !== undefined) {
     body.tool_choice = request.toolChoice;
   }
+  if (request.reasoning) {
+    body.reasoning = request.reasoning;
+  }
   return body;
 }
 
@@ -94,7 +97,7 @@ export function extractOpenAICodexResponse(value: unknown): UpstreamResponse {
 
   return {
     id: typeof response.id === "string" ? response.id : `resp_${randomUUID()}`,
-    model: typeof response.model === "string" ? response.model : "gpt-5",
+    model: typeof response.model === "string" ? response.model : "gpt-5.4",
     outputText,
     functionCalls: extractFunctionCalls(response.output),
     stopReason: mapStopReason(response.stop_reason),
@@ -119,7 +122,7 @@ export function normalizeOpenAICodexEvent(value: unknown, logger?: Pick<Console,
     return {
       type,
       id: typeof response.id === "string" ? response.id : `resp_${randomUUID()}`,
-      model: typeof response.model === "string" ? response.model : "gpt-5",
+      model: typeof response.model === "string" ? response.model : "gpt-5.4",
     };
   }
 

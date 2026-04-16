@@ -16,9 +16,9 @@ describe("OpenAICodexTransport", () => {
         fetchImpl: vi.fn(async () =>
           new Response(
             [
-              'data: {"type":"response.created","response":{"id":"resp_sse","model":"gpt-5"}}',
+              'data: {"type":"response.created","response":{"id":"resp_sse","model":"gpt-5.4"}}',
               "",
-              'data: {"type":"response.completed","response":{"id":"resp_sse","model":"gpt-5","output_text":"fallback","usage":{"input_tokens":5,"output_tokens":1},"stop_reason":"end_turn"}}',
+              'data: {"type":"response.completed","response":{"id":"resp_sse","model":"gpt-5.4","output_text":"fallback","usage":{"input_tokens":5,"output_tokens":1},"stop_reason":"end_turn"}}',
               "",
             ].join("\n"),
             {
@@ -36,7 +36,7 @@ describe("OpenAICodexTransport", () => {
     });
 
     const response = await transport.createMessage({
-      model: "gpt-5",
+      model: "gpt-5.4",
       input: [{ role: "user", content: [{ type: "input_text", text: "Hi" }] }],
     });
 
@@ -69,11 +69,11 @@ describe("OpenAICodexTransport", () => {
         fetchImpl: vi.fn(async () =>
           new Response(
             [
-              'data: {"type":"response.created","response":{"id":"resp_sse","model":"gpt-5"}}',
+              'data: {"type":"response.created","response":{"id":"resp_sse","model":"gpt-5.4"}}',
               "",
               'data: {"type":"response.output_text.delta","delta":"SSE content"}',
               "",
-              'data: {"type":"response.completed","response":{"id":"resp_sse","model":"gpt-5","output_text":"SSE content","usage":{"input_tokens":5,"output_tokens":2},"stop_reason":"end_turn"}}',
+              'data: {"type":"response.completed","response":{"id":"resp_sse","model":"gpt-5.4","output_text":"SSE content","usage":{"input_tokens":5,"output_tokens":2},"stop_reason":"end_turn"}}',
               "",
             ].join("\n"),
             {
@@ -93,7 +93,7 @@ describe("OpenAICodexTransport", () => {
 
     const events: string[] = [];
     for await (const event of transport.streamMessage({
-      model: "gpt-5",
+      model: "gpt-5.4",
       input: [{ role: "user", content: [{ type: "input_text", text: "Hi" }] }],
     })) {
       events.push(event.type);

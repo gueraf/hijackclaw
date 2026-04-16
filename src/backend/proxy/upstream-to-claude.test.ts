@@ -15,7 +15,7 @@ describe("translateUpstreamResponseToClaude", () => {
   it("maps a normalized upstream response into a Claude-style message response", () => {
     const result = translateUpstreamResponseToClaude({
       id: "resp_123",
-      model: "gpt-5",
+      model: "gpt-5.4",
       outputText: "Hello from Codex",
       stopReason: "end_turn",
       stopSequence: null,
@@ -30,7 +30,7 @@ describe("translateUpstreamResponseToClaude", () => {
       type: "message",
       role: "assistant",
       content: [{ type: "text", text: "Hello from Codex" }],
-      model: "gpt-5",
+      model: "gpt-5.4",
       stop_reason: "end_turn",
       stop_sequence: null,
       usage: {
@@ -43,7 +43,7 @@ describe("translateUpstreamResponseToClaude", () => {
   it("translates function calls into tool_use content blocks", () => {
     const result = translateUpstreamResponseToClaude({
       id: "resp_456",
-      model: "gpt-5",
+      model: "gpt-5.4",
       outputText: "I'll read that file.",
       functionCalls: [
         {

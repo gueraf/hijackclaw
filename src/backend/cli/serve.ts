@@ -72,6 +72,7 @@ export function createServeContext(deps: ServeContextDeps): ServeContext {
       registerProxyRoutes(app, {
         upstreamTransport: codexTransport,
         models: [config.model, config.smallFastModel],
+        modelMap: config.modelMap,
         logger,
       });
 

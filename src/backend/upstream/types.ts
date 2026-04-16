@@ -53,6 +53,9 @@ export type UpstreamRequest = {
   input: UpstreamInputItem[];
   tools?: UpstreamTool[];
   toolChoice?: unknown;
+  reasoning?: {
+    effort?: "low" | "medium" | "high";
+  };
   maxOutputTokens?: number;
   temperature?: number;
   topP?: number;
