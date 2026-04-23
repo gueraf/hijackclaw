@@ -16,18 +16,23 @@ const PLIST_LABEL = "com.hijackclaw.proxy";
 
 export function generateEnvSh(config: DaemonConfig): string {
   return `# HijackClaw proxy integration (auto-generated)
-# Checks if the local proxy is alive before setting env vars.
-# If the proxy is down, these vars are NOT set and Claude Code works normally.
-if nc -z 127.0.0.1 ${config.port} 2>/dev/null; then
-  export ANTHROPIC_BASE_URL="http://127.0.0.1:${config.port}"
-  export ANTHROPIC_AUTH_TOKEN="hijackclaw"
-  export ANTHROPIC_MODEL="${config.model}"
-  export ANTHROPIC_SMALL_FAST_MODEL="${config.smallFastModel}"
-  export ANTHROPIC_DEFAULT_OPUS_MODEL="${config.model}"
-  export ANTHROPIC_DEFAULT_SONNET_MODEL="${config.model}"
-  export ANTHROPIC_DEFAULT_HAIKU_MODEL="${config.smallFastModel}"
-  export CLAUDE_CODE_SUBAGENT_MODEL="${config.smallFastModel}"
-fi
+# Provides a 'claude-codex' wrapper function that explicitly targets the local proxy.
+# The normal 'claude' command remains untouched.
+claude-codex() {
+  if nc -z 127.0.0.1 ${config.port} 2>/dev/null; then
+    ANTHROPIC_BASE_URL="http://127.0.0.1:${config.port}" \\
+    ANTHROPIC_AUTH_TOKEN="hijackclaw" \\
+    ANTHROPIC_MODEL="${config.model}" \\
+    ANTHROPIC_SMALL_FAST_MODEL="${config.smallFastModel}" \\
+    ANTHROPIC_DEFAULT_OPUS_MODEL="${config.model}" \\
+    ANTHROPIC_DEFAULT_SONNET_MODEL="${config.model}" \\
+    ANTHROPIC_DEFAULT_HAIKU_MODEL="${config.smallFastModel}" \\
+    CLAUDE_CODE_SUBAGENT_MODEL="${config.smallFastModel}" \\
+    claude "$@"
+  else
+    echo "HijackClaw proxy is not running on port ${config.port}. Start it with 'hijackclaw serve'."
+  fi
+}
 `;
 }
 

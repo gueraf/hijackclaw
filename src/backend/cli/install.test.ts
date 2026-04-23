@@ -24,17 +24,19 @@ describe("install", () => {
   });
 
   describe("generateEnvSh", () => {
-    it("produces a script that checks proxy health before exporting", () => {
+    it("produces a script that checks proxy health before invoking claude with inline env vars", () => {
       const script = generateEnvSh(DEFAULT_CONFIG);
+      expect(script).toContain("claude-codex() {");
       expect(script).toContain("nc -z 127.0.0.1 8082");
-      expect(script).toContain('export ANTHROPIC_BASE_URL="http://127.0.0.1:8082"');
-      expect(script).toContain('export ANTHROPIC_AUTH_TOKEN="hijackclaw"');
-      expect(script).toContain(`export ANTHROPIC_MODEL="${DEFAULT_CONFIG.model}"`);
-      expect(script).toContain(`export ANTHROPIC_SMALL_FAST_MODEL="${DEFAULT_CONFIG.smallFastModel}"`);
-      expect(script).toContain(`export ANTHROPIC_DEFAULT_OPUS_MODEL="${DEFAULT_CONFIG.model}"`);
-      expect(script).toContain(`export ANTHROPIC_DEFAULT_SONNET_MODEL="${DEFAULT_CONFIG.model}"`);
-      expect(script).toContain(`export ANTHROPIC_DEFAULT_HAIKU_MODEL="${DEFAULT_CONFIG.smallFastModel}"`);
-      expect(script).toContain(`export CLAUDE_CODE_SUBAGENT_MODEL="${DEFAULT_CONFIG.smallFastModel}"`);
+      expect(script).toContain('ANTHROPIC_BASE_URL="http://127.0.0.1:8082" \\');
+      expect(script).toContain('ANTHROPIC_AUTH_TOKEN="hijackclaw" \\');
+      expect(script).toContain(`ANTHROPIC_MODEL="${DEFAULT_CONFIG.model}" \\`);
+      expect(script).toContain(`ANTHROPIC_SMALL_FAST_MODEL="${DEFAULT_CONFIG.smallFastModel}" \\`);
+      expect(script).toContain(`ANTHROPIC_DEFAULT_OPUS_MODEL="${DEFAULT_CONFIG.model}" \\`);
+      expect(script).toContain(`ANTHROPIC_DEFAULT_SONNET_MODEL="${DEFAULT_CONFIG.model}" \\`);
+      expect(script).toContain(`ANTHROPIC_DEFAULT_HAIKU_MODEL="${DEFAULT_CONFIG.smallFastModel}" \\`);
+      expect(script).toContain(`CLAUDE_CODE_SUBAGENT_MODEL="${DEFAULT_CONFIG.smallFastModel}" \\`);
+      expect(script).toContain('claude "$@"');
     });
   });
 
