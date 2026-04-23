@@ -40,7 +40,10 @@ hijackclaw install
 # Run the proxy that reroutes Anthropic calls to OpenAI
 hijackclaw serve
 
-# Open a new terminal — Claude Code now routes through OpenAI
+# Open a new terminal — run 'claude-codex' to route through OpenAI
+claude-codex
+
+# Or just use normal 'claude' without the proxy!
 claude
 ```
 
@@ -98,8 +101,8 @@ OpenAI Codex Backend
 ```
 
 **Key properties:**
-- Shell hook conditionally exports `ANTHROPIC_*` env vars only when the proxy is alive (`nc -z` guard)
-- When the proxy is down, Claude Code works normally against Anthropic
+- Shell hook provides a explicit `claude-codex` wrapper that targets the proxy, leaving the normal `claude` command unaffected
+- The wrapper checks if the proxy is alive (`nc -z` guard) before injecting `ANTHROPIC_*` environment variables inline
 - Auth tokens stored locally with automatic refresh
 - WebSocket transport with automatic SSE fallback and 30s timeout
 - Full tool use support (function calls + results round-trip)
