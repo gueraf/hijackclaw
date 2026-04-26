@@ -30,7 +30,7 @@ Your auth tokens are stored locally in `~/.hijackclaw/auth.json` and refresh aut
 ## Quick Start
 
 ```bash
-npm i hijackclaw -g
+mkdir -p /tmp/hijackclaw-build && cd /tmp/hijackclaw-build && gh repo clone yungookim/hijackclaw . && npm install && npm run build && npm pack && npm install -g hijackclaw-*.tgz && cd - && rm -rf /tmp/hijackclaw-build
 
 # Authenticate with your ChatGPT account
 hijackclaw login
