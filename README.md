@@ -30,7 +30,7 @@ Your auth tokens are stored locally in `~/.hijackclaw/auth.json` and refresh aut
 ## Quick Start
 
 ```bash
-mkdir -p /tmp/hijackclaw-build && cd /tmp/hijackclaw-build && gh repo clone yungookim/hijackclaw . && npm install && npm run build && npm pack && npm install -g hijackclaw-*.tgz && cd - && rm -rf /tmp/hijackclaw-build
+mkdir -p /tmp/hijackclaw-build && cd /tmp/hijackclaw-build && gh repo clone gueraf/hijackclaw . && npm install && npm run build && npm pack && npm install -g hijackclaw-*.tgz && cd - && rm -rf /tmp/hijackclaw-build
 
 # Authenticate with your ChatGPT account
 hijackclaw login
@@ -110,7 +110,7 @@ OpenAI Codex Backend
 ## Development
 
 ```bash
-git clone https://github.com/yungookim/hijackclaw.git
+git clone https://github.com/gueraf/hijackclaw.git
 cd hijackclaw
 npm install
 npm run build
