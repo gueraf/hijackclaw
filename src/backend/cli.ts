@@ -20,17 +20,6 @@ async function main(): Promise<void> {
       await runServe({ config, appHome });
       break;
     }
-    case "install": {
-      const { runInstall } = await import("./cli/install.js");
-      await runInstall({ appHome });
-      break;
-    }
-    case "uninstall": {
-      const { runUninstall } = await import("./cli/install.js");
-      const purge = process.argv.includes("--purge");
-      await runUninstall({ appHome, purge });
-      break;
-    }
     case "status": {
       const { runStatus } = await import("./cli/status.js");
       await runStatus({ appHome });

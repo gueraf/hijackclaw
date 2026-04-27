@@ -33,7 +33,6 @@ export function createServeContext(deps: ServeContextDeps): ServeContext {
   const logger: Logger = deps.logger ?? console;
   const appHome = deps.appHome;
   const config = deps.config;
-  const pidFile = path.join(appHome, "proxy.pid");
 
   let server: http.Server | null = null;
   let transport: UpstreamTransport | null = null;
@@ -92,12 +91,9 @@ export function createServeContext(deps: ServeContextDeps): ServeContext {
       });
 
       fs.mkdirSync(appHome, { recursive: true });
-      fs.writeFileSync(pidFile, String(process.pid));
     },
 
     async stop() {
-      try { fs.unlinkSync(pidFile); } catch {}
-
       if (transport) {
         await transport.close();
         transport = null;
