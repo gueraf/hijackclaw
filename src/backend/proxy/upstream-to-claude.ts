@@ -42,7 +42,9 @@ export function translateUpstreamResponseToClaude(response: UpstreamResponse): C
     role: "assistant",
     content,
     model: response.model,
-    stop_reason: mapUpstreamStopReasonToClaude(response.stopReason),
+    stop_reason: response.functionCalls?.length
+      ? "tool_use"
+      : mapUpstreamStopReasonToClaude(response.stopReason),
     stop_sequence: response.stopSequence,
     usage: {
       input_tokens: response.usage.inputTokens,

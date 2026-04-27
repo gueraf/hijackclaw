@@ -24,6 +24,33 @@ function parseFunctionCallInput(args: string): Record<string, unknown> {
   }
 }
 
+function mergeFunctionCalls(
+  existing: UpstreamFunctionCall[],
+  incoming: UpstreamFunctionCall[],
+): UpstreamFunctionCall[] {
+  const merged = [...existing];
+  const seen = new Set(merged.map((call) => call.callId));
+
+  for (const call of incoming) {
+    if (!seen.has(call.callId)) {
+      merged.push(call);
+      seen.add(call.callId);
+    }
+  }
+
+  return merged;
+}
+
+function missingTextSuffix(current: string, next: string): string {
+  if (next.length <= current.length) {
+    return "";
+  }
+  if (next.startsWith(current)) {
+    return next.slice(current.length);
+  }
+  return current.length === 0 ? next : "";
+}
+
 export async function* translateUpstreamStreamToClaudeSse(
   stream: AsyncIterable<UpstreamStreamEvent>,
   options: TranslateStreamOptions,
@@ -35,6 +62,7 @@ export async function* translateUpstreamStreamToClaudeSse(
   let stopSequence: string | null = null;
   let functionCalls: UpstreamFunctionCall[] = [];
   let contentBlockIndex = 0;
+  let text = "";
 
   yield formatSseEvent("message_start", {
     type: "message_start",
@@ -64,6 +92,7 @@ export async function* translateUpstreamStreamToClaudeSse(
 
   for await (const event of stream) {
     if (event.type === "response.output_text.delta" && event.delta.length > 0) {
+      text += event.delta;
       yield formatSseEvent("content_block_delta", {
         type: "content_block_delta",
         index: contentBlockIndex,
@@ -75,12 +104,47 @@ export async function* translateUpstreamStreamToClaudeSse(
       continue;
     }
 
+    if (event.type === "response.output_text.done") {
+      const suffix = missingTextSuffix(text, event.text);
+      if (suffix.length > 0) {
+        text += suffix;
+        yield formatSseEvent("content_block_delta", {
+          type: "content_block_delta",
+          index: contentBlockIndex,
+          delta: {
+            type: "text_delta",
+            text: suffix,
+          },
+        });
+      }
+      continue;
+    }
+
+    if (event.type === "response.function_call.completed") {
+      functionCalls = mergeFunctionCalls(functionCalls, [event.functionCall]);
+      stopReason = "tool_use";
+      continue;
+    }
+
     if (event.type === "response.completed") {
+      const suffix = missingTextSuffix(text, event.response.outputText);
+      if (suffix.length > 0) {
+        text += suffix;
+        yield formatSseEvent("content_block_delta", {
+          type: "content_block_delta",
+          index: contentBlockIndex,
+          delta: {
+            type: "text_delta",
+            text: suffix,
+          },
+        });
+      }
       inputTokens = event.response.usage.inputTokens;
       outputTokens = event.response.usage.outputTokens;
-      stopReason = mapUpstreamStopReasonToClaude(event.response.stopReason);
       stopSequence = event.response.stopSequence;
-      functionCalls = event.response.functionCalls ?? [];
+      functionCalls = mergeFunctionCalls(functionCalls, event.response.functionCalls ?? []);
+      const mappedStopReason = mapUpstreamStopReasonToClaude(event.response.stopReason);
+      stopReason = functionCalls.length > 0 && mappedStopReason === "end_turn" ? "tool_use" : mappedStopReason;
     }
   }
 

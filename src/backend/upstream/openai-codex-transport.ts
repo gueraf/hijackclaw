@@ -33,7 +33,7 @@ export class OpenAICodexTransport implements UpstreamTransport {
       this.deps.onModeChange?.("ws");
       return await this.wsTransport.createMessage(request);
     } catch (error) {
-      this.logger.warn(`Falling back from WebSocket to SSE transport: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.info(`Falling back from WebSocket to SSE transport: ${error instanceof Error ? error.message : String(error)}`);
       this.deps.onModeChange?.("sse");
       return await this.sseTransport.createMessage(request);
     }
@@ -50,9 +50,9 @@ export class OpenAICodexTransport implements UpstreamTransport {
       if (yieldedAny) {
         return;
       }
-      this.logger.warn("Falling back from WebSocket to SSE transport: WebSocket stream completed with no events");
+      this.logger.info("Falling back from WebSocket to SSE transport: WebSocket stream completed with no events");
     } catch (error) {
-      this.logger.warn(`Falling back from WebSocket to SSE transport: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.info(`Falling back from WebSocket to SSE transport: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     this.deps.onModeChange?.("sse");
