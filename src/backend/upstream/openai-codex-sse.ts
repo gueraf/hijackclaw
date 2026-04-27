@@ -1,4 +1,4 @@
-import { buildOpenAICodexRequestBody, collectCompletedResponse, normalizeOpenAICodexEvent } from "./openai-codex-wire.js";
+import { buildOpenAICodexRequestBody, collectCompletedResponse, OpenAICodexStreamNormalizer } from "./openai-codex-wire.js";
 import type { UpstreamRequest, UpstreamStreamEvent, UpstreamTransport } from "./types.js";
 
 type Logger = Pick<Console, "info" | "warn" | "error">;
@@ -51,6 +51,7 @@ export class OpenAICodexSseTransport implements UpstreamTransport {
     this.logger.info("OpenAI Codex SSE stream opened");
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
+    const normalizer = new OpenAICodexStreamNormalizer(this.logger);
     let buffer = "";
 
     while (true) {
@@ -72,8 +73,7 @@ export class OpenAICodexSseTransport implements UpstreamTransport {
         if (!parsed) {
           continue;
         }
-        const normalized = normalizeOpenAICodexEvent(parsed, this.logger);
-        if (normalized) {
+        for (const normalized of normalizer.normalize(parsed)) {
           yield normalized;
         }
       }
@@ -83,8 +83,7 @@ export class OpenAICodexSseTransport implements UpstreamTransport {
     if (tail) {
       const parsed = parseSseDataLines(tail);
       if (parsed) {
-        const normalized = normalizeOpenAICodexEvent(parsed, this.logger);
-        if (normalized) {
+        for (const normalized of normalizer.normalize(parsed)) {
           yield normalized;
         }
       }

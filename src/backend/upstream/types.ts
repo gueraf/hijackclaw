@@ -91,6 +91,14 @@ export type UpstreamStreamEvent =
       delta: string;
     }
   | {
+      type: "response.output_text.done";
+      text: string;
+    }
+  | {
+      type: "response.function_call.completed";
+      functionCall: UpstreamFunctionCall;
+    }
+  | {
       type: "response.completed";
       response: UpstreamResponse;
     };

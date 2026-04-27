@@ -114,4 +114,48 @@ describe("translateUpstreamStreamToClaudeSse", () => {
     expect(sse).toContain('"stop_reason":"tool_use"');
     expect(sse).toContain("event: message_stop");
   });
+
+  it("emits fallback text and streamed function calls from item-level events", async () => {
+    const sse = await collectChunks(
+      translateUpstreamStreamToClaudeSse(
+        toAsyncStream([
+          {
+            type: "response.created",
+            id: "resp_3",
+            model: "gpt-5.4",
+          },
+          {
+            type: "response.output_text.done",
+            text: "Reading file.",
+          },
+          {
+            type: "response.function_call.completed",
+            functionCall: {
+              callId: "call_item",
+              name: "Read",
+              arguments: '{"file_path":"/tmp/item.txt"}',
+            },
+          },
+          {
+            type: "response.completed",
+            response: {
+              id: "resp_3",
+              model: "gpt-5.4",
+              outputText: "",
+              stopReason: "end_turn",
+              stopSequence: null,
+              usage: { inputTokens: 7, outputTokens: 6 },
+            },
+          },
+        ]),
+        { model: "gpt-5.4", messageId: "msg_item" },
+      ),
+    );
+
+    expect(sse).toContain('"text":"Reading file."');
+    expect(sse).toContain('"id":"call_item"');
+    expect(sse).toContain('"name":"Read"');
+    expect(sse).toContain("file_path");
+    expect(sse).toContain('"stop_reason":"tool_use"');
+  });
 });

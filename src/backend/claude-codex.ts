@@ -7,6 +7,11 @@ import { readConfig } from "./cli/config.js";
 import { createServeContext } from "./cli/serve.js";
 
 const appHome = process.env.HIJACKCLAW_HOME ?? path.join(os.homedir(), ".hijackclaw");
+const quietProxyLogger = {
+  info() {},
+  warn() {},
+  error() {},
+};
 
 async function checkProxyHealth(port: number): Promise<boolean> {
   try {
@@ -24,7 +29,9 @@ async function main() {
   let serveCtx: ReturnType<typeof createServeContext> | null = null;
 
   if (!proxyAlive) {
-    serveCtx = createServeContext({ config, appHome });
+    // The embedded proxy shares the terminal with Claude's TUI. Keep routine
+    // transport logs silent here; fatal startup errors are reported below.
+    serveCtx = createServeContext({ config, appHome, logger: quietProxyLogger });
     try {
       await serveCtx.start();
     } catch (err: unknown) {

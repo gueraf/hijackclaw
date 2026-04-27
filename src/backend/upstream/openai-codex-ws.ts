@@ -1,5 +1,10 @@
 import WebSocket, { type ClientOptions } from "ws";
-import { buildOpenAICodexRequestBody, collectCompletedResponse, normalizeOpenAICodexEvent } from "./openai-codex-wire.js";
+import {
+  buildOpenAICodexRequestBody,
+  collectCompletedResponse,
+  isOpenAICodexProgressEvent,
+  OpenAICodexStreamNormalizer,
+} from "./openai-codex-wire.js";
 import type { UpstreamRequest, UpstreamStreamEvent, UpstreamTransport } from "./types.js";
 
 type Logger = Pick<Console, "info" | "warn" | "error">;
@@ -97,6 +102,7 @@ export class OpenAICodexWsTransport implements UpstreamTransport {
 
     this.sockets.add(socket);
     const queue = new AsyncQueue<UpstreamStreamEvent>();
+    const normalizer = new OpenAICodexStreamNormalizer(this.logger);
     let completed = false;
     let receivedAnyEvent = false;
 
@@ -129,16 +135,17 @@ export class OpenAICodexWsTransport implements UpstreamTransport {
     socket.on("message", (data) => {
       try {
         const parsed = JSON.parse(data.toString("utf8")) as unknown;
-        const normalized = normalizeOpenAICodexEvent(parsed, this.logger);
-        if (!normalized) {
-          return;
+        const normalizedEvents = normalizer.normalize(parsed);
+        if (normalizedEvents.length > 0 || isOpenAICodexProgressEvent(parsed)) {
+          receivedAnyEvent = true;
+          clearTimer();
         }
-        receivedAnyEvent = true;
-        clearTimer();
-        queue.push(normalized);
-        if (normalized.type === "response.completed") {
-          completed = true;
-          socket.close();
+        for (const normalized of normalizedEvents) {
+          queue.push(normalized);
+          if (normalized.type === "response.completed") {
+            completed = true;
+            socket.close();
+          }
         }
       } catch (error) {
         clearTimer();
