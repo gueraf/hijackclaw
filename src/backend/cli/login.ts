@@ -46,8 +46,13 @@ export async function runLogin(deps: LoginDeps = {}): Promise<void> {
   });
 
   const { authorizeUrl, flowId } = await authService.startLogin({ method: "browser" });
-  logger.info("Opening browser for ChatGPT login...");
-  await open(authorizeUrl);
+  logger.info(`Please open the following URL in your browser to log in:\n\n${authorizeUrl}\n`);
+
+  if (process.env.BROWSER !== "none") {
+    logger.info("Opening browser for ChatGPT login...");
+    await open(authorizeUrl);
+  }
+
   logger.info("Waiting for authorization (up to 10 minutes)...");
 
   const result = await new Promise<"approved" | "error">((resolve) => {
