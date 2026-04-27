@@ -35,12 +35,7 @@ mkdir -p /tmp/hijackclaw-build && cd /tmp/hijackclaw-build && gh repo clone guer
 # Authenticate with your ChatGPT account
 hijackclaw login
 
-# Install daemon + shell hook (adds env vars to new shells when proxy is alive)
-hijackclaw install
-# Run the proxy that reroutes Anthropic calls to OpenAI
-hijackclaw serve
-
-# Open a new terminal — run 'claude-codex' to route through OpenAI
+# Run 'claude-codex' to automatically start the proxy and route through OpenAI
 claude-codex
 
 # Or just use normal 'claude' without the proxy!
@@ -52,11 +47,8 @@ claude
 | Command | Description |
 |---------|-------------|
 | `hijackclaw login` | Browser-based OAuth PKCE login with your ChatGPT account |
-| `hijackclaw install` | Install launchd daemon + shell hook in `.zshrc`/`.bashrc` |
-| `hijackclaw uninstall` | Remove daemon, shell hook, and env files |
-| `hijackclaw uninstall --purge` | Also remove auth tokens and config |
-| `hijackclaw serve` | Run the proxy in the foreground (used by launchd) |
-| `hijackclaw status` | Check proxy, auth, and install state |
+| `hijackclaw serve` | Run the proxy manually in the foreground |
+| `hijackclaw status` | Check proxy and auth state |
 
 ### Configuration
 
@@ -101,8 +93,8 @@ OpenAI Codex Backend
 ```
 
 **Key properties:**
-- Shell hook provides a explicit `claude-codex` wrapper that targets the proxy, leaving the normal `claude` command unaffected
-- The wrapper checks if the proxy is alive (`nc -z` guard) before injecting `ANTHROPIC_*` environment variables inline
+- The explicit `claude-codex` wrapper targets the proxy automatically, leaving the normal `claude` command unaffected
+- The wrapper starts the proxy locally if it is not already running, and injects the proper `ANTHROPIC_*` environment variables before spawning Claude Code
 - Auth tokens stored locally with automatic refresh
 - WebSocket transport with automatic SSE fallback and 30s timeout
 - Full tool use support (function calls + results round-trip)

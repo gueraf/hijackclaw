@@ -1,8 +1,6 @@
-import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { readConfig } from "./config.js";
-import { SHELL_HOOK_BEGIN_MARKER } from "./install.js";
 import { readOpenAICodexProfile } from "../upstream/openai-codex-profile.js";
 import { isTokenExpired } from "../auth/token-store.js";
 
@@ -36,34 +34,10 @@ export async function runStatus(deps: StatusDeps = {}): Promise<void> {
     }
   }
 
-  // launchd agent
-  const plistPath = path.join(os.homedir(), "Library", "LaunchAgents", "com.hijackclaw.proxy.plist");
-  const plistInstalled = fs.existsSync(plistPath);
-
-  // Shell hook
-  const shell = process.env.SHELL ?? "/bin/zsh";
-  const rcPath = shell.endsWith("bash")
-    ? path.join(os.homedir(), ".bashrc")
-    : path.join(os.homedir(), ".zshrc");
-  let hookInstalled = false;
-  try {
-    hookInstalled = fs.readFileSync(rcPath, "utf8").includes(SHELL_HOOK_BEGIN_MARKER);
-  } catch {}
-
-  // PID file
-  const pidFile = path.join(appHome, "proxy.pid");
-  let pidInfo = "no PID file";
-  if (fs.existsSync(pidFile)) {
-    const pid = fs.readFileSync(pidFile, "utf8").trim();
-    pidInfo = `PID ${pid}`;
-  }
-
   logger.info("HijackClaw Status");
   logger.info("─────────────────────────────────");
-  logger.info(`Proxy:      ${proxyAlive ? "running" : "down"} (port ${config.port}, ${pidInfo})`);
+  logger.info(`Proxy:      ${proxyAlive ? "running" : "down"} (port ${config.port})`);
   logger.info(`Auth:       ${authStatus}`);
   logger.info(`Model:      ${config.model} / ${config.smallFastModel}`);
-  logger.info(`launchd:    ${plistInstalled ? "installed" : "not installed"}`);
-  logger.info(`Shell hook: ${hookInstalled ? "installed" : "not installed"} (${rcPath})`);
   logger.info(`Config:     ${path.join(appHome, "config.json")}`);
 }

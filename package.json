@@ -19,7 +19,8 @@
     "cli"
   ],
   "bin": {
-    "hijackclaw": "dist/backend/cli.js"
+    "hijackclaw": "dist/backend/cli.js",
+    "claude-codex": "dist/backend/claude-codex.js"
   },
   "files": [
     "dist",
