@@ -60,9 +60,10 @@ Config lives at `~/.hijackclaw/config.json`:
   "model": "gpt-5.5",
   "smallFastModel": "gpt-5.4-mini",
   "modelMap": {
-    "claude-sonnet-4-6": "gpt-5.5",
     "claude-haiku-4-5-20251001": "gpt-5.4-mini",
-    "claude-opus": "gpt-5.5"
+    "claude-opus-4-7": "gpt-5.5",
+    "claude-sonnet-4-6": "gpt-5.5",
+    "claude-sonnet-4-7": "gpt-5.5"
   }
 }
 ```
