@@ -57,12 +57,12 @@ Config lives at `~/.hijackclaw/config.json`:
 ```json
 {
   "port": 8082,
-  "model": "gpt-5.4",
+  "model": "gpt-5.5",
   "smallFastModel": "gpt-5.4-mini",
   "modelMap": {
-    "claude-sonnet-4-6": "gpt-5.4",
+    "claude-sonnet-4-6": "gpt-5.5",
     "claude-haiku-4-5-20251001": "gpt-5.4-mini",
-    "claude-opus": "gpt-5.4"
+    "claude-opus": "gpt-5.5"
   }
 }
 ```
