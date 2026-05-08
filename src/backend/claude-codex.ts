@@ -4,7 +4,11 @@ import { spawn } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { readConfig } from "./cli/config.js";
-import { createServeContext } from "./cli/serve.js";
+import type { ServeContext } from "./cli/serve.js";
+
+// depd (transitive dep of express) calls process.cwd() at module load time,
+// which throws if the process was started from a since-deleted directory.
+try { process.cwd(); } catch { process.chdir(os.homedir()); }
 
 const appHome = process.env.HIJACKCLAW_HOME ?? path.join(os.homedir(), ".hijackclaw");
 const quietProxyLogger = {
@@ -32,11 +36,12 @@ async function main() {
   const config = readConfig(path.join(appHome, "config.json"));
   const proxyAlive = await checkProxyHealth(config.port);
 
-  let serveCtx: ReturnType<typeof createServeContext> | null = null;
+  let serveCtx: ServeContext | null = null;
 
   if (!proxyAlive) {
     // The embedded proxy shares the terminal with Claude's TUI. Keep routine
     // transport logs silent here; fatal startup errors are reported below.
+    const { createServeContext } = await import("./cli/serve.js");
     serveCtx = createServeContext({ config, appHome, logger: quietProxyLogger });
     try {
       await serveCtx.start();
