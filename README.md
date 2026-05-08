@@ -30,7 +30,7 @@ Your auth tokens are stored locally in `~/.hijackclaw/auth.json` and refresh aut
 ## Quick Start
 
 ```bash
-mkdir -p /tmp/claude-codex-build && cd /tmp/claude-codex-build && gh repo clone gueraf/claude-codex . && npm install && npm run build && npm pack && sudo npm install -g claude-codex-*.tgz && cd - && rm -rf /tmp/claude-codex-build
+rm -rf /tmp/claude-codex-build && mkdir /tmp/claude-codex-build && cd /tmp/claude-codex-build && gh repo clone gueraf/claude-codex . && npm install && npm run build && npm pack && sudo npm install -g claude-codex-*.tgz && cd - && rm -rf /tmp/claude-codex-build
 
 # Authenticate with your ChatGPT account
 claude-codex --login
