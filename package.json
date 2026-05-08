@@ -1,12 +1,12 @@
 {
-  "name": "hijackclaw",
+  "name": "claude-codex",
   "version": "0.1.1",
   "description": "Run Claude Code using your ChatGPT/Codex subscription as the backend",
   "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gueraf/hijackclaw.git"
+    "url": "https://github.com/gueraf/claude-codex.git"
   },
   "keywords": [
     "claude",
