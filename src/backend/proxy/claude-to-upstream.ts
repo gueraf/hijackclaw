@@ -18,12 +18,13 @@ import type {
 
 type TranslateClaudeRequestOptions = {
   reasoningModel?: string;
+  reasoningEffort?: "low" | "medium" | "high" | "extreme";
 };
 
 function translateReasoning(
   request: ClaudeMessagesRequest,
   options?: TranslateClaudeRequestOptions,
-): { effort?: "low" | "medium" | "high" } | undefined {
+): { effort?: "low" | "medium" | "high" | "extreme" } | undefined {
   if (request.thinking?.type === "disabled") {
     return undefined;
   }
@@ -42,6 +43,10 @@ function translateReasoning(
       return { effort: "medium" };
     }
     return { effort: "high" };
+  }
+
+  if (options?.reasoningEffort) {
+    return { effort: options.reasoningEffort };
   }
 
   const reasoningModel = (options?.reasoningModel ?? request.model).toLowerCase();

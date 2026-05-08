@@ -1,11 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
 
+export type ReasoningEffort = "low" | "medium" | "high" | "extreme";
+
 export type DaemonConfig = {
   port: number;
   model: string;
   smallFastModel: string;
   modelMap: Record<string, string>;
+  reasoningEffort?: ReasoningEffort;
 };
 
 export const DEFAULT_CONFIG: DaemonConfig = {
@@ -30,6 +33,12 @@ function normalizeModelMap(value: unknown): Record<string, string> {
   );
 }
 
+const VALID_EFFORTS: ReasoningEffort[] = ["low", "medium", "high", "extreme"];
+
+function parseReasoningEffort(value: unknown): ReasoningEffort | undefined {
+  return VALID_EFFORTS.includes(value as ReasoningEffort) ? (value as ReasoningEffort) : undefined;
+}
+
 export function readConfig(filePath: string): DaemonConfig {
   try {
     const raw = JSON.parse(fs.readFileSync(filePath, "utf8")) as Partial<DaemonConfig>;
@@ -38,6 +47,7 @@ export function readConfig(filePath: string): DaemonConfig {
       model: typeof raw.model === "string" ? raw.model : DEFAULT_CONFIG.model,
       smallFastModel: typeof raw.smallFastModel === "string" ? raw.smallFastModel : DEFAULT_CONFIG.smallFastModel,
       modelMap: normalizeModelMap(raw.modelMap),
+      reasoningEffort: parseReasoningEffort(raw.reasoningEffort),
     };
   } catch {
     return { ...DEFAULT_CONFIG, modelMap: { ...DEFAULT_CONFIG.modelMap } };

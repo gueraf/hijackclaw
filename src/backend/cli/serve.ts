@@ -49,7 +49,7 @@ export function createServeContext(deps: ServeContextDeps): ServeContext {
       });
 
       if (!authService.isAuthenticated()) {
-        throw new Error("Not authenticated. Run `hijackclaw login` first.");
+        throw new Error("Not authenticated. Run `claude-codex --login` first.");
       }
 
       const codexTransport = createOpenAICodexTransport({
@@ -72,6 +72,7 @@ export function createServeContext(deps: ServeContextDeps): ServeContext {
         upstreamTransport: codexTransport,
         models: [config.model, config.smallFastModel],
         modelMap: config.modelMap,
+        reasoningEffort: config.reasoningEffort,
         logger,
       });
 

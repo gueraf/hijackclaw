@@ -13,10 +13,11 @@ export type ProxyRouteDeps = {
   upstreamTransport: UpstreamTransport;
   models?: string[];
   modelMap?: Record<string, string>;
+  reasoningEffort?: "low" | "medium" | "high" | "extreme";
   logger?: Logger;
 };
 
-const DEFAULT_MODELS = ["gpt-5.4", "gpt-5.4-mini"];
+const DEFAULT_MODELS = ["gpt-5.5", "gpt-5.4-mini"];
 
 function normalizeModelName(model: string): string {
   return model.trim().toLowerCase().replace(/\[1m\]$/i, "");
@@ -122,7 +123,7 @@ export function registerProxyRoutes(app: Pick<Express, "get" | "post">, deps: Pr
       const upstreamRequest = translateClaudeRequestToUpstream({
         ...claudeRequest,
         model: upstreamModel,
-      }, { reasoningModel: requestedModel });
+      }, { reasoningModel: requestedModel, reasoningEffort: deps.reasoningEffort });
       logger.info(
         `Proxying model ${requestedModel} -> ${upstreamModel} with reasoning effort ${upstreamRequest.reasoning?.effort ?? "unset"}`,
       );

@@ -59,6 +59,7 @@ Config lives at `~/.hijackclaw/config.json`:
   "port": 8082,
   "model": "gpt-5.5",
   "smallFastModel": "gpt-5.4-mini",
+  "reasoningEffort": "extreme",
   "modelMap": {
     "claude-haiku-4-5-20251001": "gpt-5.4-mini",
     "claude-opus-4-7": "gpt-5.5",
@@ -73,7 +74,8 @@ Config lives at `~/.hijackclaw/config.json`:
 | `port` | Local proxy port (default `8082`) |
 | `model` | Default upstream model for unmapped requests |
 | `smallFastModel` | Upstream model used for lightweight/fast requests |
-| `modelMap` | Maps Claude model names to upstream models. When Claude Code sends a request for a specific Claude model, the proxy looks it up here and routes to the corresponding upstream model. The original Claude model name is still used to infer reasoning effort (e.g. `opus` → high, `sonnet` → medium, `haiku` → low). |
+| `reasoningEffort` | Override reasoning effort for all requests: `low`, `medium`, `high`, or `extreme`. Omit to infer from model name (opus → high, sonnet → medium, haiku → low). |
+| `modelMap` | Maps Claude model names to upstream models. When Claude Code sends a request for a specific Claude model, the proxy looks it up here and routes to the corresponding upstream model. The original Claude model name is still used to infer reasoning effort when `reasoningEffort` is not set. |
 
 ## Architecture
 
