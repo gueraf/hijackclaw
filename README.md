@@ -30,10 +30,10 @@ Your auth tokens are stored locally in `~/.hijackclaw/auth.json` and refresh aut
 ## Quick Start
 
 ```bash
-mkdir -p /tmp/hijackclaw-build && cd /tmp/hijackclaw-build && gh repo clone gueraf/hijackclaw . && npm install && npm run build && npm pack && npm install -g hijackclaw-*.tgz && cd - && rm -rf /tmp/hijackclaw-build
+mkdir -p /tmp/claude-codex-build && cd /tmp/claude-codex-build && gh repo clone gueraf/claude-codex . && npm install && npm run build && npm pack && sudo npm install -g claude-codex-*.tgz && cd - && rm -rf /tmp/claude-codex-build
 
 # Authenticate with your ChatGPT account
-hijackclaw login
+claude-codex --login
 
 # Run 'claude-codex' to automatically start the proxy and route through OpenAI
 claude-codex
@@ -46,7 +46,7 @@ claude
 
 | Command | Description |
 |---------|-------------|
-| `hijackclaw login` | Browser-based OAuth PKCE login with your ChatGPT account |
+| `claude-codex --login` | Browser-based OAuth PKCE login with your ChatGPT account |
 | `hijackclaw serve` | Run the proxy manually in the foreground |
 | `hijackclaw status` | Check proxy and auth state |
 
@@ -102,8 +102,8 @@ OpenAI Codex Backend
 ## Development
 
 ```bash
-git clone https://github.com/gueraf/hijackclaw.git
-cd hijackclaw
+git clone https://github.com/gueraf/claude-codex.git
+cd claude-codex
 npm install
 npm run build
 

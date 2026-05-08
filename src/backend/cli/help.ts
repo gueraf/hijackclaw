@@ -8,7 +8,7 @@ COMMANDS
   status       Show proxy and auth status
 
 QUICK START
-  1. hijackclaw login       # authenticate with ChatGPT
+  1. claude-codex --login   # authenticate with ChatGPT
   2. claude-codex           # run Claude Code with Codex backend
 
 SAFETY

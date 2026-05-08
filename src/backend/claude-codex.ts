@@ -23,6 +23,12 @@ async function checkProxyHealth(port: number): Promise<boolean> {
 }
 
 async function main() {
+  if (process.argv[2] === "--login") {
+    const { runLogin } = await import("./cli/login.js");
+    await runLogin({ appHome });
+    return;
+  }
+
   const config = readConfig(path.join(appHome, "config.json"));
   const proxyAlive = await checkProxyHealth(config.port);
 
